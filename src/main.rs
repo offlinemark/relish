@@ -5,8 +5,10 @@ use std::process;
 
 
 fn execute(cmd: &str) {
-    let ret = process::Command::new(cmd).output().unwrap();
-    println!("{}", String::from_utf8_lossy(&ret.stdout).trim());
+    match process::Command::new(cmd).output() {
+        Ok(ret) => println!("{}", String::from_utf8_lossy(&ret.stdout).trim()),
+        Err(why) => println!("rush: {}", why)
+    }
 }
 
 
