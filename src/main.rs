@@ -4,8 +4,14 @@ use std::env;
 use std::process;
 
 
-fn execute(cmd: &str) {
-    match process::Command::new(cmd).output() {
+struct CommandLine<'a> {
+    cmd: String,
+    args: Vec<&'a str>
+}
+
+
+fn execute(cmdline: &CommandLine) {
+    match process::Command::new(&cmdline.cmd).args(&cmdline.args).output() {
         Ok(ret) => println!("{}", String::from_utf8_lossy(&ret.stdout).trim()),
         Err(why) => println!("rush: {}", why)
     }
@@ -36,37 +42,45 @@ fn get_prompt() -> String {
 
 fn main() {
 
-    // allocate String for user input
-    let mut input: String = String::new();
+    // init
+    let mut cmdline: CommandLine = CommandLine {
+        cmd: String::new(),
+        args: Vec::new()
+    };
     let prompt: String = get_prompt();
 
+    // main shell loop
     loop {
-
+        // print prompt
         print!("{}", prompt);
         if let Err(why) = io::stdout().flush() {
             println!("error: {}", why);
             continue;
         }
 
-        // input probably has stuff in it from the last command, so clear
-        // it out
-        input.clear();
+        // clear contents of last command
+        if !cmdline.cmd.is_empty() {
+            cmdline.cmd.clear();
+        }
 
         // read input into our String. if there was an error, print the
-        // error message and continue
-        if let Err(why) = io::stdin().read_line(&mut input){
+        // error message and restart loop
+        if let Err(why) = io::stdin().read_line(&mut cmdline.cmd){
             println!("error: {}", why);
             continue;
         }
 
+        // trim whitespace
+        cmdline.cmd = cmdline.cmd.trim().to_string();
+
         // catch builtins, otherwise feed to execute function
-        match input.trim() {
+        match &cmdline.cmd[..] { // coerce String to &str
             "" => continue,
             "exit" => {
                 println!("Exiting!");
                 break;
             },
-            cmd => execute(&cmd)
+            _ => execute(&cmdline)
         }
     }
 }
