@@ -12,7 +12,9 @@ fn execute(cmd: &str) {
 }
 
 
-fn get_prompt(prompt: &mut String) {
+fn get_prompt() -> String {
+    let mut prompt: String = String::new();
+
     // get username
     prompt.push_str(env::var("USER").unwrap().trim());
 
@@ -24,19 +26,19 @@ fn get_prompt(prompt: &mut String) {
 
     prompt.push(' ');
 
-    // get cwd
+    // get current directory
     prompt.push_str(env::var("PWD").unwrap().trim());
 
     prompt.push_str(" $ ");
+    prompt
 }
 
 
 fn main() {
 
-    // we allocate a String for the user input
+    // allocate String for user input
     let mut input: String = String::new();
-    let mut prompt: String = String::new();
-    get_prompt(&mut prompt);
+    let prompt: String = get_prompt();
 
     loop {
 
