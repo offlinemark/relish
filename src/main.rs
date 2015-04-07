@@ -1,22 +1,44 @@
 use std::io;
 use std::io::Write; // need it to flush stdout
+use std::env;
 use std::process;
 
-static PROMPT: &'static str = "$ ";
 
-fn execute(cmd: &String) {
+fn execute(cmd: &str) {
     let ret = process::Command::new(cmd).output().unwrap();
     println!("{}", String::from_utf8_lossy(&ret.stdout).trim());
 }
+
+
+fn get_prompt(prompt: &mut String) {
+    // get username
+    prompt.push_str(env::var("USER").unwrap().trim());
+
+    prompt.push('@');
+
+    // get hostname
+    let hn = process::Command::new("/bin/hostname").output().unwrap();
+    prompt.push_str(String::from_utf8_lossy(&hn.stdout).trim());
+
+    prompt.push(' ');
+
+    // get cwd
+    prompt.push_str(env::var("PWD").unwrap().trim());
+
+    prompt.push_str(" $ ");
+}
+
 
 fn main() {
 
     // we allocate a String for the user input
     let mut input: String = String::new();
+    let mut prompt: String = String::new();
+    get_prompt(&mut prompt);
 
     loop {
 
-        print!("{}", PROMPT);
+        print!("{}", prompt);
         if let Err(why) = io::stdout().flush() {
             println!("error: {}", why);
             continue;
@@ -33,16 +55,13 @@ fn main() {
             continue;
         }
 
-        // trim the newline off and save it back
-        input = input.trim().to_string();
-
-        execute(&input);
-
-        if input == "exit" {
-            println!("Exiting!");
-            break;
+        // catch builtins, otherwise feed to execute function
+        match input.trim() {
+            "exit" => {
+                println!("Exiting!");
+                break;
+            },
+            cmd => execute(&cmd)
         }
     }
-
 }
-
