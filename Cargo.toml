@@ -1,0 +1,4 @@
+[package]
+name = "rush"
+version = "0.0.1"
+authors = ["Mark Mossberg <mark.mossberg@gmail.com>"]
