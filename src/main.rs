@@ -28,7 +28,8 @@ fn get_prompt() -> String {
     let hostname = hostname.trim();
 
     // get current directory
-    let pwd = env::var("PWD").unwrap();
+    let pwd = env::current_dir().unwrap();
+    let pwd = pwd.as_path().to_str().unwrap();
 
     format!("{}@{} {} $ ", username, hostname, pwd)
 }
