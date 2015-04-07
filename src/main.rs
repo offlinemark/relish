@@ -57,6 +57,7 @@ fn main() {
 
         // catch builtins, otherwise feed to execute function
         match input.trim() {
+            "" => continue,
             "exit" => {
                 println!("Exiting!");
                 break;
