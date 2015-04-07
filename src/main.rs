@@ -1,6 +1,11 @@
+use std::io;
 use std::io::Write; // need it to flush stdout
 
-static PROMPT: &'static str = "> ";
+static PROMPT: &'static str = "$ ";
+
+fn execute(cmd: &String) {
+    println!("you entered [{}]", cmd);
+}
 
 fn main() {
 
@@ -10,18 +15,26 @@ fn main() {
     loop {
 
         print!("{}", PROMPT);
-        // the print! macro line buffers and doesn't automatically flush
-        std::io::stdout().flush();
+        if let Err(why) = io::stdout().flush() {
+            println!("error: {}", why);
+            continue;
+        }
 
+        // input probably has stuff in it from the last command, so clear
+        // it out
         input.clear();
 
-        // read input into our String
-        std::io::stdin().read_line(&mut input);
+        // read input into our String. if there was an error, print the
+        // error message and continue
+        if let Err(why) = io::stdin().read_line(&mut input){
+            println!("error: {}", why);
+            continue;
+        }
 
         // trim the newline off and save it back
         input = input.trim().to_string();
 
-        println!("you entered [{}]", input);
+        execute(&input);
 
         if input == "exit" {
             println!("Exiting!");
