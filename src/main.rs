@@ -19,24 +19,18 @@ fn execute(cmdline: &CommandLine) {
 
 
 fn get_prompt() -> String {
-    let mut prompt: String = String::new();
-
     // get username
-    prompt.push_str(env::var("USER").unwrap().trim());
-
-    prompt.push('@');
+    let username = env::var("USER").unwrap();
 
     // get hostname
-    let hn = process::Command::new("/bin/hostname").output().unwrap();
-    prompt.push_str(String::from_utf8_lossy(&hn.stdout).trim());
-
-    prompt.push(' ');
+    let hostname = process::Command::new("/bin/hostname").output().unwrap();
+    let hostname = String::from_utf8_lossy(&hostname.stdout);
+    let hostname = hostname.trim();
 
     // get current directory
-    prompt.push_str(env::var("PWD").unwrap().trim());
+    let pwd = env::var("PWD").unwrap();
 
-    prompt.push_str(" $ ");
-    prompt
+    format!("{}@{} {} $ ", username, hostname, pwd)
 }
 
 
