@@ -1,10 +1,12 @@
 use std::io;
 use std::io::Write; // need it to flush stdout
+use std::process;
 
 static PROMPT: &'static str = "$ ";
 
 fn execute(cmd: &String) {
-    println!("you entered [{}]", cmd);
+    let ret = process::Command::new(cmd).output().unwrap();
+    println!("{}", String::from_utf8_lossy(&ret.stdout).trim());
 }
 
 fn main() {
