@@ -1,1 +1,3 @@
-# rush
+# relish
+
+rust elementary learning idea...shell
