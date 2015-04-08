@@ -13,7 +13,7 @@ struct CommandLine {
 fn execute(cmdline: &CommandLine) {
     match process::Command::new(&cmdline.cmd).args(&cmdline.args).output() {
         Ok(ret) => println!("{}", String::from_utf8_lossy(&ret.stdout).trim()),
-        Err(why) => println!("rush: {}", why)
+        Err(why) => println!("relish: {}", why)
     }
 }
 
