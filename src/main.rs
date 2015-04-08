@@ -4,9 +4,9 @@ use std::env;
 use std::process;
 
 
-struct CommandLine<'a> {
+struct CommandLine {
     cmd: String,
-    args: Vec<&'a str>
+    args: Vec<String>
 }
 
 
@@ -35,6 +35,18 @@ fn get_prompt() -> String {
 }
 
 
+fn preprocess(cmdline: & mut CommandLine) {
+    let tmp = cmdline.cmd.clone();
+    for (i, each) in tmp.split(' ').enumerate() {
+        if i == 0 {
+            cmdline.cmd = each.to_string();
+        } else {
+            cmdline.args.push(each.to_string());
+        }
+    }
+}
+
+
 fn main() {
 
     // init
@@ -56,6 +68,7 @@ fn main() {
         // clear contents of last command
         if !cmdline.cmd.is_empty() {
             cmdline.cmd.clear();
+            cmdline.args.clear();
         }
 
         // read input into our String. if there was an error, print the
@@ -75,7 +88,9 @@ fn main() {
                 println!("Exiting!");
                 break;
             },
-            _ => execute(&cmdline)
+            _ => preprocess(&mut cmdline)
         }
+
+        execute(&cmdline);
     }
 }
