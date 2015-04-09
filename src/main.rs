@@ -59,10 +59,12 @@ fn preprocess(cmdline: &mut CommandLine) {
     let tmp = cmdline.cmd.clone();
     // TODO: this is awful, refactor to not use a loop
     for (i, each) in tmp.split(' ').enumerate() {
-        if i == 0 {
-            cmdline.cmd = each.to_string();
+        if each.trim() == "" {
+            continue;
+        } else if i == 0 {
+            cmdline.cmd = each.trim().to_string();
         } else {
-            cmdline.args.push(each.to_string());
+            cmdline.args.push(each.trim().to_string());
         }
     }
 }
