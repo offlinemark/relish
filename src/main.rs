@@ -11,6 +11,12 @@ struct CommandLine {
 }
 
 
+fn clear_cmdline(cmdline: &mut CommandLine) {
+    cmdline.cmd.clear();
+    cmdline.args.clear();
+}
+
+
 /*
  * execute - execute shell command line based on input CommandLine
  */
@@ -81,8 +87,7 @@ fn main() {
 
         // clear contents of last command
         if !cmdline.cmd.is_empty() {
-            cmdline.cmd.clear();
-            cmdline.args.clear();
+            clear_cmdline(&mut cmdline);
         }
 
         // read input into our String. if bytes_read is 0, we've hit EOF
