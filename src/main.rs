@@ -51,6 +51,7 @@ fn get_prompt() -> String {
  */
 fn preprocess(cmdline: &mut CommandLine) {
     let tmp = cmdline.cmd.clone();
+    // TODO: this is awful, refactor to not use a loop
     for (i, each) in tmp.split(' ').enumerate() {
         if i == 0 {
             cmdline.cmd = each.to_string();
@@ -62,7 +63,6 @@ fn preprocess(cmdline: &mut CommandLine) {
 
 
 fn main() {
-
     // init
     let mut cmdline: CommandLine = CommandLine {
         cmd: String::new(),
@@ -75,7 +75,7 @@ fn main() {
         // print prompt
         print!("{}", prompt);
         if let Err(why) = io::stdout().flush() {
-            println!("error: {}", why);
+            println!("relish: {}", why);
             continue;
         }
 
@@ -96,22 +96,27 @@ fn main() {
                     break;
                 },
             Err(why) => {
-                println!("relish: {:?}", why);
+                println!("relish: {}", why);
                 continue;
             }
         }
 
-        // trim whitespace
+        // check if blank
         cmdline.cmd = cmdline.cmd.trim().to_string();
+        if cmdline.cmd == "" {
+            continue;
+        }
 
-        // catch builtins, otherwise feed to execute function
+        // parse
+        preprocess(&mut cmdline);
+
+        // handle builtins
         match &cmdline.cmd[..] { // coerce String to &str
-            "" => continue,
             "exit" => {
                 println!("Exiting!");
                 break;
-            },
-            _ => preprocess(&mut cmdline)
+            }
+            _ => {}
         }
 
         execute(&cmdline);
