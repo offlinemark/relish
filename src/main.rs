@@ -1,9 +1,8 @@
 use std::io;
 use std::io::Write; // need it to flush stdout
+use std::env;
 use std::process::Stdio;
 use std::process::Command;
-use std::env;
-use std::process;
 
 
 struct CommandLine {
@@ -12,6 +11,9 @@ struct CommandLine {
 }
 
 
+/*
+ * execute - execute shell command line based on input CommandLine
+ */
 fn execute(cmdline: &CommandLine) {
     if let Err(why) = Command::new(&cmdline.cmd)
                               .args(&cmdline.args)
@@ -23,12 +25,15 @@ fn execute(cmdline: &CommandLine) {
 }
 
 
+/*
+ * get_prompt - generate and return shell prompt
+ */
 fn get_prompt() -> String {
     // get username
     let username = env::var("USER").unwrap();
 
     // get hostname
-    let hostname = process::Command::new("/bin/hostname").output().unwrap();
+    let hostname = Command::new("/bin/hostname").output().unwrap();
     let hostname = String::from_utf8_lossy(&hostname.stdout);
     let hostname = hostname.trim();
 
@@ -40,7 +45,11 @@ fn get_prompt() -> String {
 }
 
 
-fn preprocess(cmdline: & mut CommandLine) {
+/*
+ * preprocess - main parsing routine responsible for popularing CommandLine
+ * struct
+ */
+fn preprocess(cmdline: &mut CommandLine) {
     let tmp = cmdline.cmd.clone();
     for (i, each) in tmp.split(' ').enumerate() {
         if i == 0 {
