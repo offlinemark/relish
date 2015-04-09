@@ -61,6 +61,9 @@ fn preprocess(cmdline: &mut CommandLine) {
     for (i, each) in tmp.split(' ').enumerate() {
         if each.trim() == "" {
             continue;
+        } else if each.chars().nth(0).unwrap() == '#' {
+            // ok to use unwrap because we've guaranteed input isn't empty
+            break;
         } else if i == 0 {
             cmdline.cmd = each.trim().to_string();
         } else {
@@ -108,10 +111,14 @@ fn main() {
             }
         }
 
-        // check if blank
+        // check if blank/comment
         cmdline.cmd = cmdline.cmd.trim().to_string();
-        if cmdline.cmd == "" {
-            continue;
+        match cmdline.cmd.chars().nth(0) {
+            Some(first) =>
+                if first == '#' {
+                    continue
+                },
+            None => continue // empty string
         }
 
         // parse
