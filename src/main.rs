@@ -1,5 +1,7 @@
 use std::io;
 use std::io::Write; // need it to flush stdout
+use std::process::Stdio;
+use std::process::Command;
 use std::env;
 use std::process;
 
@@ -11,9 +13,12 @@ struct CommandLine {
 
 
 fn execute(cmdline: &CommandLine) {
-    match process::Command::new(&cmdline.cmd).args(&cmdline.args).output() {
-        Ok(ret) => println!("{}", String::from_utf8_lossy(&ret.stdout).trim()),
-        Err(why) => println!("relish: {}", why)
+    if let Err(why) = Command::new(&cmdline.cmd)
+                              .args(&cmdline.args)
+                              .stdout(Stdio::inherit())
+                              .stderr(Stdio::inherit())
+                              .output() {
+        println!("relish: {}", why);
     }
 }
 
