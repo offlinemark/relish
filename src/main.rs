@@ -85,11 +85,20 @@ fn main() {
             cmdline.args.clear();
         }
 
-        // read input into our String. if there was an error, print the
+        // read input into our String. if bytes_read is 0, we've hit EOF
+        // and should exit. if there was an error, print the
         // error message and restart loop
-        if let Err(why) = io::stdin().read_line(&mut cmdline.cmd){
-            println!("error: {}", why);
-            continue;
+        match io::stdin().read_line(&mut cmdline.cmd) {
+            Ok(bytes_read) =>
+                // Exit on EOF (Ctrl-d, end of script)
+                if bytes_read == 0 {
+                    println!("");
+                    break;
+                },
+            Err(why) => {
+                println!("relish: {:?}", why);
+                continue;
+            }
         }
 
         // trim whitespace
