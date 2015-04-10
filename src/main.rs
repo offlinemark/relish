@@ -9,14 +9,12 @@ use std::process::Command;
 static BUILTINS: [&'static str; 3] = ["exit", "cd", "pwd"];
 
 struct CommandLine {
+    // command name
     cmd: String,
-    args: Vec<String>
-}
-
-
-fn clear_cmdline(cmdline: &mut CommandLine) {
-    cmdline.cmd.clear();
-    cmdline.args.clear();
+    // arguments, starting directly with the first actual argument
+    args: Vec<String>,
+    // whether to execute as background process
+    bg: bool
 }
 
 
@@ -24,12 +22,19 @@ fn clear_cmdline(cmdline: &mut CommandLine) {
  * execute - execute shell command line based on input CommandLine
  */
 fn execute(cmdline: &CommandLine) {
-    if let Err(why) = Command::new(&cmdline.cmd)
-                              .args(&cmdline.args)
-                              .stdout(Stdio::inherit())
-                              .stderr(Stdio::inherit())
-                              .output() {
-        println!("relish: {}", why);
+    let mut _cmd = Command::new(&cmdline.cmd);
+    let cmd = _cmd.args(&cmdline.args);
+
+    if cmdline.bg {
+        if let Err(why) = cmd.spawn() {
+            println!("relish: {}", why);
+        }
+    } else {
+        if let Err(why) = cmd.stdout(Stdio::inherit())
+                             .stderr(Stdio::inherit())
+                             .output() {
+            println!("relish: {}", why);
+        }
     }
 }
 
@@ -104,9 +109,17 @@ fn preprocess(cmdline: &mut CommandLine) {
     // TODO: this is awful, refactor to not use a loop
     for (i, each) in tmp.split(' ').enumerate() {
         if each.trim() == "" {
+            // eat extra tabs/spaces
             continue;
         } else if each.trim().chars().nth(0).unwrap() == '#' {
+            // stop parsing if there's a comment
             // ok to use unwrap because we've guaranteed input isn't empty
+            break;
+        } else if each.trim().chars().nth(0).unwrap() == '&' {
+            // background process, ignoring rest of input
+            // TODO: probably shouldn't just ignore rest of input. also,
+            // the & has to have a spcae before it right now
+            cmdline.bg = true;
             break;
         } else if i == 0 {
             cmdline.cmd = each.trim().to_string();
@@ -118,24 +131,21 @@ fn preprocess(cmdline: &mut CommandLine) {
 
 
 fn main() {
-    // init
-    let mut cmdline: CommandLine = CommandLine {
-        cmd: String::new(),
-        args: Vec::new()
-    };
 
     // main shell loop
     loop {
+
+        let mut cmdline: CommandLine = CommandLine {
+            cmd: String::new(),
+            args: Vec::new(),
+            bg: false
+        };
+
         // print prompt
         print!("{}", get_prompt());
         if let Err(why) = io::stdout().flush() {
             println!("relish: {}", why);
             continue;
-        }
-
-        // clear contents of last command
-        if !cmdline.cmd.is_empty() {
-            clear_cmdline(&mut cmdline);
         }
 
         // read input into our String. if bytes_read is 0, we've hit EOF
