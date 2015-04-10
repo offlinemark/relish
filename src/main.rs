@@ -91,7 +91,7 @@ fn preprocess(cmdline: &mut CommandLine) {
     for (i, each) in tmp.split(' ').enumerate() {
         if each.trim() == "" {
             continue;
-        } else if each.chars().nth(0).unwrap() == '#' {
+        } else if each.trim().chars().nth(0).unwrap() == '#' {
             // ok to use unwrap because we've guaranteed input isn't empty
             break;
         } else if i == 0 {
