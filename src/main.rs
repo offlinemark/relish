@@ -1,7 +1,7 @@
 use std::io;
 use std::io::Write; // need it to flush stdout
 use std::env;
-use std::path::Path;
+use std::path;
 use std::process;
 use std::process::Stdio;
 use std::process::Command;
@@ -41,20 +41,29 @@ fn builtin(cmdline: &CommandLine) {
             process::exit(0);
         }
         "cd" => {
-            // get dir to change to based on the length of cmdline.args
-            let tmp = env::home_dir().unwrap();
-            let dir =
-                if cmdline.args.len() == 0 {
-                    tmp.as_path()
-                } else {
-                    Path::new(&cmdline.args[0])
-                };
+            // these two are declared here to satisfy lifetime requirements.
+            // because dir (below) is a pointer, the objects it can point to
+            // must have a longer life, and be declared before
+            let home = env::home_dir().unwrap_or(path::PathBuf::from("."));
+            let old = env::var("OLDPWD").unwrap_or(".".to_string());
 
-            // set current dir
+            // get dir to change to based on the length of cmdline.args
+            let dir = if cmdline.args.len() == 0 {
+                home.as_path()
+            } else {
+                if cmdline.args[0] == "-" {
+                    path::Path::new(&old)
+                } else {
+                    path::Path::new(&cmdline.args[0])
+                }
+            };
+
+            // set $OLDPWD
+            env::set_var("OLDPWD", &env::current_dir().unwrap());
+            // change directory
             if let Err(why) = env::set_current_dir(&dir) {
                println!("relish: {}", why);
             }
-
         }
         _ => {}
     }
@@ -66,7 +75,7 @@ fn builtin(cmdline: &CommandLine) {
  */
 fn get_prompt() -> String {
     // get username
-    let username = env::var("USER").unwrap();
+    let username = env::var("USER").unwrap_or("???".to_string());
 
     // get hostname
     let hostname = Command::new("/bin/hostname").output().unwrap();
@@ -109,12 +118,11 @@ fn main() {
         cmd: String::new(),
         args: Vec::new()
     };
-    let prompt: String = get_prompt();
 
     // main shell loop
     loop {
         // print prompt
-        print!("{}", prompt);
+        print!("{}", get_prompt());
         if let Err(why) = io::stdout().flush() {
             println!("relish: {}", why);
             continue;
