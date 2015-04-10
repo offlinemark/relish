@@ -46,20 +46,18 @@ fn builtin(cmdline: &CommandLine) {
             process::exit(0);
         }
         "cd" => {
-            // these two are declared here to satisfy lifetime requirements.
-            // because dir (below) is a pointer, the objects it can point to
-            // must have a longer life, and be declared before
-            let home = env::home_dir().unwrap_or(path::PathBuf::from("."));
-            let old = env::var("OLDPWD").unwrap_or(".".to_string());
-
             // get dir to change to based on the length of cmdline.args
             let dir = if cmdline.args.len() == 0 {
-                home.as_path()
+                env::home_dir().unwrap_or(path::PathBuf::from("."))
             } else {
+                // if they say `cd -`
                 if cmdline.args[0] == "-" {
-                    path::Path::new(&old)
+                    // return $OLDPWD, or "." if it's not available
+                    path::PathBuf::from(&env::var("OLDPWD")
+                                             .unwrap_or(".".to_string()))
                 } else {
-                    path::Path::new(&cmdline.args[0])
+                    // create PathBuf from what they actually said
+                    path::PathBuf::from(&cmdline.args[0])
                 }
             };
 
