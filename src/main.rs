@@ -6,7 +6,7 @@ use std::process;
 use std::process::Stdio;
 use std::process::Command;
 
-static BUILTINS: [&'static str; 2] = ["exit", "cd"];
+static BUILTINS: [&'static str; 3] = ["exit", "cd", "pwd"];
 
 struct CommandLine {
     cmd: String,
@@ -65,6 +65,11 @@ fn builtin(cmdline: &CommandLine) {
                println!("relish: {}", why);
             }
         }
+        "pwd" => {
+            let pwd = env::current_dir().unwrap();
+            let pwd = pwd.display();
+            println!("{}", pwd);
+        }
         _ => {}
     }
 }
@@ -84,7 +89,7 @@ fn get_prompt() -> String {
 
     // get current directory
     let pwd = env::current_dir().unwrap();
-    let pwd = pwd.as_path().to_str().unwrap();
+    let pwd = pwd.display();
 
     format!("{}@{} {} $ ", username, hostname, pwd)
 }
