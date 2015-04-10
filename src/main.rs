@@ -1,9 +1,12 @@
 use std::io;
 use std::io::Write; // need it to flush stdout
 use std::env;
+use std::path::Path;
+use std::process;
 use std::process::Stdio;
 use std::process::Command;
 
+static BUILTINS: [&'static str; 2] = ["exit", "cd"];
 
 struct CommandLine {
     cmd: String,
@@ -27,6 +30,33 @@ fn execute(cmdline: &CommandLine) {
                               .stderr(Stdio::inherit())
                               .output() {
         println!("relish: {}", why);
+    }
+}
+
+
+fn builtin(cmdline: &CommandLine) {
+    match &cmdline.cmd[..] {
+        "exit" => {
+            println!("So long, and thanks for all the fish!");
+            process::exit(0);
+        }
+        "cd" => {
+            // get dir to change to based on the length of cmdline.args
+            let tmp = env::home_dir().unwrap();
+            let dir =
+                if cmdline.args.len() == 0 {
+                    tmp.as_path()
+                } else {
+                    Path::new(&cmdline.args[0])
+                };
+
+            // set current dir
+            if let Err(why) = env::set_current_dir(&dir) {
+               println!("relish: {}", why);
+            }
+
+        }
+        _ => {}
     }
 }
 
@@ -125,14 +155,10 @@ fn main() {
         preprocess(&mut cmdline);
 
         // handle builtins
-        match &cmdline.cmd[..] { // coerce String to &str
-            "exit" => {
-                println!("Exiting!");
-                break;
-            }
-            _ => {}
+        if BUILTINS.contains(&&cmdline.cmd[..]) {
+            builtin(&cmdline)
+        } else {
+            execute(&cmdline);
         }
-
-        execute(&cmdline);
     }
 }
