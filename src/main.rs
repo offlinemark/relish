@@ -17,6 +17,11 @@ struct CommandLine {
     bg: bool
 }
 
+// probaby doesn't need to be a macro
+macro_rules! print_err {
+    ($msg:expr) => (println!("relish: {}", $msg));
+}
+
 
 /*
  * execute - execute shell command line based on input CommandLine
@@ -27,13 +32,13 @@ fn execute(cmdline: &CommandLine) {
 
     if cmdline.bg {
         if let Err(why) = cmd.spawn() {
-            println!("relish: {}", why);
+            print_err!(why);
         }
     } else {
         if let Err(why) = cmd.stdout(Stdio::inherit())
                              .stderr(Stdio::inherit())
                              .output() {
-            println!("relish: {}", why);
+            print_err!(why);
         }
     }
 }
@@ -65,7 +70,7 @@ fn builtin(cmdline: &CommandLine) {
             env::set_var("OLDPWD", &env::current_dir().unwrap());
             // change directory
             if let Err(why) = env::set_current_dir(&dir) {
-               println!("relish: {}", why);
+                print_err!(why);
             }
         }
         "pwd" => {
@@ -142,7 +147,7 @@ fn main() {
         // print prompt
         print!("{}", get_prompt());
         if let Err(why) = io::stdout().flush() {
-            println!("relish: {}", why);
+            print_err!(why);
             continue;
         }
 
@@ -157,7 +162,7 @@ fn main() {
                     break;
                 },
             Err(why) => {
-                println!("relish: {}", why);
+                print_err!(why);
                 continue;
             }
         }
