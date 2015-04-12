@@ -111,7 +111,7 @@ fn get_prompt() -> String {
 
 
 /*
- * preprocess - main parsing routine responsible for popularing CommandLine
+ * preprocess - main parsing routine responsible for populating CommandLine
  * struct
  */
 fn preprocess(cmdline: &mut CommandLine) {
@@ -128,7 +128,7 @@ fn preprocess(cmdline: &mut CommandLine) {
         } else if each.trim().chars().nth(0).unwrap() == '&' {
             // background process, ignoring rest of input
             // TODO: probably shouldn't just ignore rest of input. also,
-            // the & has to have a spcae before it right now
+            // the & has to have a space before it right now
             cmdline.bg = true;
             break;
         } else if i == 0 {
