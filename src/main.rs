@@ -1,9 +1,11 @@
 use std::io;
-use std::io::Write; // need it to flush stdout
 use std::env;
 use std::path::PathBuf;
 use std::process;
 use std::process::{Stdio, Command};
+
+// trait methods
+use std::io::Write; // flush stdout
 
 static BUILTINS: [&'static str; 3] = ["exit", "cd", "pwd"];
 
@@ -17,7 +19,7 @@ struct CommandLine {
 }
 
 // probaby doesn't need to be a macro
-macro_rules! print_err {
+macro_rules! printerr {
     ($msg:expr) => (println!("relish: {}", $msg));
 }
 
@@ -46,13 +48,23 @@ fn execute(cmdline: &CommandLine) {
 
     if cmdline.bg {
         if let Err(why) = cmd.spawn() {
-            print_err!(why);
+            printerr!(why);
         }
     } else {
         if let Err(why) = cmd.stdout(Stdio::inherit())
                              .stderr(Stdio::inherit())
                              .output() {
-            print_err!(why);
+            if let Some(errno) = why.raw_os_error() {
+                match errno {
+                    2 => printerr!(format!("{}: {}", cmdline.cmd,
+                                           "Command not found")),
+                    _  => printerr!(format!("{}: {}", cmdline.cmd, why)),
+                }
+                return
+            }
+
+            // getting here is pretty rare, means error didn't have os errno
+            printerr!(why);
         }
     }
 }
@@ -86,7 +98,7 @@ fn builtin(cmdline: &CommandLine) {
                                         .unwrap_or(PathBuf::from(".".to_string())));
             // change directory
             if let Err(why) = env::set_current_dir(&dir) {
-                print_err!(why);
+                printerr!(why);
             }
         }
         "pwd" => println!("{}", get_pwd()),
@@ -119,6 +131,7 @@ fn preprocess(cmdline: &mut CommandLine) {
     let tmp = cmdline.cmd.clone();
     // TODO: this is awful, refactor to not use a loop
     for (i, each) in tmp.split(' ').enumerate() {
+
         if each.trim() == "" {
             // eat extra tabs/spaces
             continue;
@@ -126,23 +139,45 @@ fn preprocess(cmdline: &mut CommandLine) {
             // stop parsing if there's a comment
             // ok to use unwrap because we've guaranteed input isn't empty
             break;
-        } else if each.trim().chars().nth(0).unwrap() == '&' {
+        } else if each.trim().chars().nth(0).unwrap() == '&'  {
             // background process, ignoring rest of input
             // TODO: probably shouldn't just ignore rest of input. also,
             // the & has to have a space before it right now
+
+            if cmdline.bg == true {
+                printerr!("background symbol `&` specified twice");
+            }
             cmdline.bg = true;
             break;
-        } else if i == 0 {
-            // implement `exit` builtin here for efficiency. as soon as we
-            // know that the command name is exit, we can shut it down
-            if each.trim() == "exit" {
-                println!("So long, and thanks for all the fish!");
-                process::exit(0);
-            } else {
-                cmdline.cmd = each.trim().to_string();
-            }
         } else {
-            cmdline.args.push(each.trim().to_string());
+            // ok, this is real input
+
+            let mut tmp = each.trim().to_string();
+
+            // did they not include a space before the bg symbol?
+            if each.trim().chars().nth(each.len()-1).unwrap() == '&' {
+                if cmdline.bg == true {
+                    printerr!("background symbol `&` specified twice");
+                }
+                cmdline.bg = true;
+                tmp.pop();
+            }
+        
+
+            // if it's the very first split word
+            if i == 0 {
+                // implement `exit` builtin here for efficiency. as soon as we
+                // know that the command name is exit, we can shut it down
+                if each.trim() == "exit" {
+                    println!("So long, and thanks for all the fish!");
+                    process::exit(0);
+                } else {
+                    cmdline.cmd = tmp;
+                }
+            } else {
+                // regular argument
+                cmdline.args.push(tmp);
+            }
         }
     }
 }
@@ -162,7 +197,7 @@ fn main() {
         // print prompt
         print!("{}", get_prompt());
         if let Err(why) = io::stdout().flush() {
-            print_err!(why);
+            printerr!(why);
             continue;
         }
 
@@ -177,7 +212,7 @@ fn main() {
                     break;
                 },
             Err(why) => {
-                print_err!(why);
+                printerr!(why);
                 continue;
             }
         }
