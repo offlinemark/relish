@@ -1,8 +1,7 @@
 use std::io;
 use std::env;
 use std::path::PathBuf;
-use std::process;
-use std::process::{Stdio, Command};
+use std::process::{Stdio, Command, exit};
 
 // trait methods
 use std::io::Write; // flush stdout
@@ -77,7 +76,7 @@ fn builtin(cmdline: &CommandLine) {
     match &cmdline.cmd[..] {
         "exit" => {
             println!("So long, and thanks for all the fish!");
-            process::exit(0);
+            exit(0);
         }
         "cd" => {
             // get dir to change to based on the length of cmdline.args
