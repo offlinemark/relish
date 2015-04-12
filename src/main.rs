@@ -1,10 +1,9 @@
 use std::io;
 use std::io::Write; // need it to flush stdout
 use std::env;
-use std::path;
+use std::path::PathBuf;
 use std::process;
-use std::process::Stdio;
-use std::process::Command;
+use std::process::{Stdio, Command};
 
 static BUILTINS: [&'static str; 3] = ["exit", "cd", "pwd"];
 
@@ -20,6 +19,21 @@ struct CommandLine {
 // probaby doesn't need to be a macro
 macro_rules! print_err {
     ($msg:expr) => (println!("relish: {}", $msg));
+}
+
+
+/*
+ * get_pwd - returns String containing pwd or "???" if there was an error
+ */
+fn get_pwd() -> String {
+    match env::current_dir() {
+        Ok(pwd) => {
+            pwd.to_string_lossy().to_string()
+        }
+        Err(_) => {
+            "???".to_string()
+        }
+    }
 }
 
 
@@ -53,31 +67,28 @@ fn builtin(cmdline: &CommandLine) {
         "cd" => {
             // get dir to change to based on the length of cmdline.args
             let dir = if cmdline.args.len() == 0 {
-                env::home_dir().unwrap_or(path::PathBuf::from("."))
+                env::home_dir().unwrap_or(PathBuf::from("."))
             } else {
                 // if they say `cd -`
                 if cmdline.args[0] == "-" {
                     // return $OLDPWD, or "." if it's not available
-                    path::PathBuf::from(&env::var("OLDPWD")
+                    PathBuf::from(&env::var("OLDPWD")
                                              .unwrap_or(".".to_string()))
                 } else {
                     // create PathBuf from what they actually said
-                    path::PathBuf::from(&cmdline.args[0])
+                    PathBuf::from(&cmdline.args[0])
                 }
             };
 
             // set $OLDPWD
-            env::set_var("OLDPWD", &env::current_dir().unwrap());
+            env::set_var("OLDPWD", &env::current_dir()
+                                        .unwrap_or(PathBuf::from(".".to_string())));
             // change directory
             if let Err(why) = env::set_current_dir(&dir) {
                 print_err!(why);
             }
         }
-        "pwd" => {
-            let pwd = env::current_dir().unwrap();
-            let pwd = pwd.display();
-            println!("{}", pwd);
-        }
+        "pwd" => println!("{}", get_pwd()),
         _ => {}
     }
 }
@@ -95,11 +106,7 @@ fn get_prompt() -> String {
     let hostname = String::from_utf8_lossy(&hostname.stdout);
     let hostname = hostname.trim();
 
-    // get current directory
-    let pwd = env::current_dir().unwrap();
-    let pwd = pwd.display();
-
-    format!("{}@{} {} $ ", username, hostname, pwd)
+    format!("{}@{} {} $ ", username, hostname, get_pwd())
 }
 
 
