@@ -72,11 +72,13 @@ fn execute(cmdline: &CommandLine) {
 
 /*
  * builtin - implement shell builtins
- *
- * NOTE: `exit` is implemented in preprocess() for efficiency
  */
 fn builtin(cmdline: &CommandLine) {
     match &cmdline.cmd[..] {
+        "exit" => {
+            println!("So long, and thanks for all the fish!");
+            process::exit(0);
+        }
         "cd" => {
             // get dir to change to based on the length of cmdline.args
             let dir = if cmdline.args.len() == 0 {
@@ -166,13 +168,10 @@ fn preprocess(cmdline: &mut CommandLine) {
 
             // if it's the very first split word
             if i == 0 {
-                // implement `exit` builtin here for efficiency. as soon as we
-                // know that the command name is exit, we can shut it down
+                cmdline.cmd = tmp;
+                // handle `exit` builtin so we can handle it ASAP
                 if each.trim() == "exit" {
-                    println!("So long, and thanks for all the fish!");
-                    process::exit(0);
-                } else {
-                    cmdline.cmd = tmp;
+                    builtin(&cmdline);
                 }
             } else {
                 // regular argument
@@ -231,6 +230,7 @@ fn main() {
         preprocess(&mut cmdline);
 
         // handle builtins
+        // NOTE: `exit` is handled in preprocess() for efficiency
         if BUILTINS.contains(&&cmdline.cmd[..]) {
             builtin(&cmdline)
         } else {
