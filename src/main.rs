@@ -1,6 +1,9 @@
 use std::io;
+use std::io::Read;
+use std::io::{BufReader,BufRead};
 use std::env;
-use std::path::PathBuf;
+use std::fs::File;
+use std::path::{Path, PathBuf};
 use std::process::{Stdio, Command, exit};
 
 // trait methods
@@ -181,13 +184,63 @@ fn preprocess(cmdline: &mut CommandLine) {
 }
 
 
+fn read_line(cmd: &mut String, script_arg: Option<&mut File>) -> Result<usize, io::Error>  {
+    match script_arg {
+        Some(file) => {
+            match file.read_to_string(cmd) {
+                Ok(bytes_read) => Ok(bytes_read),
+                Err(why) => Err(why)
+            }
+        }
+        None => {
+            match io::stdin().read_line(cmd) {
+                Ok(bytes_read) => Ok(bytes_read),
+                Err(why) => Err(why)
+            }
+        }
+    }
+}
+
+
 fn main() {
 
-    // main shell loop
-    loop {
+    let mut script_arg: Option<&mut File> = None;
+    let mut reader: Box<BufRead> = if env::args().count() == 2 {
+        let f = File::open(&env::args().nth(1).unwrap()).unwrap();
+        Box::new(BufReader::new(f))
+    } else {
+        let i = ::std::io::stdin();
+        Box::new(BufReader::new(i))
+    };
 
+    if env::args().count() > 2 {
+        printerr!(format!("Usage: {} [script]", env::args().nth(0).unwrap()));
+        exit(1);
+    } else if env::args().count() == 2 {
+        // open file
+        // set flag that input is coming from file
+        let _path = &env::args().nth(1).unwrap();
+        let path = Path::new(_path);
+        let mut script_arg = match File::open(&path) {
+            Ok(file) => file,
+            Err(why) => panic!("couldn't open {}", path.display())
+        };
+    }
+
+    // main shell loop
+    // loop {
+    for line in (*reader).lines() {
+        let l = match line {
+            Ok(l) => l,
+            Err(why) => {
+                ::std::process::exit(0);
+            }
+
+        };
+
+        // let mut cmdline: CommandLine = CommandLine {
         let mut cmdline: CommandLine = CommandLine {
-            cmd: String::new(),
+            cmd: l,
             args: Vec::new(),
             bg: false
         };
@@ -202,18 +255,20 @@ fn main() {
         // read input into our String. if bytes_read is 0, we've hit EOF
         // and should exit. if there was an error, print the
         // error message and restart loop
-        match io::stdin().read_line(&mut cmdline.cmd) {
-            Ok(bytes_read) =>
-                // Exit on EOF (Ctrl-d, end of script)
-                if bytes_read == 0 {
-                    println!("");
-                    break;
-                },
-            Err(why) => {
-                printerr!(why);
-                continue;
-            }
-        }
+        // match io::stdin().read_line(&mut cmdline.cmd) {
+        // match read_line(&mut cmdline.cmd, script_arg) {
+        // match reader.read_line
+            // Ok(bytes_read) =>
+            //     // Exit on EOF (Ctrl-d, end of script)
+            //     if bytes_read == 0 {
+            //         println!("");
+            //         break;
+            //     },
+            // Err(why) => {
+            //     printerr!(why);
+            //     continue;
+            // }
+        // }
 
         // check if blank/comment
         cmdline.cmd = cmdline.cmd.trim().to_string();
