@@ -2,7 +2,7 @@ use std::io;
 use std::io::{stdin, Read, BufReader,BufRead};
 use std::env;
 use std::fs::File;
-use std::path::{Path, PathBuf};
+use std::path::{PathBuf};
 use std::process::{Stdio, Command, exit};
 
 // trait methods
@@ -109,6 +109,11 @@ fn builtin(cmdline: &CommandLine) {
     }
 }
 
+fn print_prompt() {
+    print!("{}", get_prompt());
+    if let Err(_) = io::stdout().flush() {
+    }
+}
 
 /*
  * get_prompt - generate and return shell prompt
@@ -183,24 +188,6 @@ fn preprocess(cmdline: &mut CommandLine) {
 }
 
 
-fn read_line(cmd: &mut String, script_arg: Option<&mut File>) -> Result<usize, io::Error>  {
-    match script_arg {
-        Some(file) => {
-            match file.read_to_string(cmd) {
-                Ok(bytes_read) => Ok(bytes_read),
-                Err(why) => Err(why)
-            }
-        }
-        None => {
-            match io::stdin().read_line(cmd) {
-                Ok(bytes_read) => Ok(bytes_read),
-                Err(why) => Err(why)
-            }
-        }
-    }
-}
-
-
 fn main() {
     if env::args().count() > 2 {
         printerr!(format!("Usage: {} [script]", env::args().nth(0).unwrap()));
@@ -211,7 +198,7 @@ fn main() {
         let path = &env::args().nth(1).unwrap();
         let file = match File::open(path) {
             Ok(file) => file,
-            Err(why) => {
+            Err(_) => {
                 printerr!(format!("couldn't open {}", path));
                 exit(1);
             }
@@ -222,11 +209,13 @@ fn main() {
         Box::new(BufReader::new(i))
     };
 
+    print_prompt();
+
     // main shell loop
     for line in reader.lines() {
         let line = match line {
             Ok(l) => l,
-            Err(why) => {
+            Err(_) => {
                 exit(0);
             }
         };
@@ -237,12 +226,7 @@ fn main() {
             bg: false
         };
 
-        // print prompt
-        print!("{}", get_prompt());
-        if let Err(why) = io::stdout().flush() {
-            printerr!(why);
-            continue;
-        }
+        print_prompt();
 
         // check if blank/comment
         cmdline.cmd = cmdline.cmd.trim().to_string();
