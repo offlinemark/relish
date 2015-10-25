@@ -207,7 +207,7 @@ fn main() {
         exit(1);
     }
 
-    let mut reader: Box<BufRead> = if env::args().count() == 2 {
+    let reader: Box<BufRead> = if env::args().count() == 2 {
         let path = &env::args().nth(1).unwrap();
         let file = match File::open(path) {
             Ok(file) => file,
@@ -224,17 +224,15 @@ fn main() {
 
     // main shell loop
     for line in reader.lines() {
-        let l = match line {
+        let line = match line {
             Ok(l) => l,
             Err(why) => {
-                ::std::process::exit(0);
+                exit(0);
             }
-
         };
 
-        // let mut cmdline: CommandLine = CommandLine {
         let mut cmdline: CommandLine = CommandLine {
-            cmd: l,
+            cmd: line,
             args: Vec::new(),
             bg: false
         };
@@ -245,24 +243,6 @@ fn main() {
             printerr!(why);
             continue;
         }
-
-        // read input into our String. if bytes_read is 0, we've hit EOF
-        // and should exit. if there was an error, print the
-        // error message and restart loop
-        // match io::stdin().read_line(&mut cmdline.cmd) {
-        // match read_line(&mut cmdline.cmd, script_arg) {
-        // match reader.read_line
-            // Ok(bytes_read) =>
-            //     // Exit on EOF (Ctrl-d, end of script)
-            //     if bytes_read == 0 {
-            //         println!("");
-            //         break;
-            //     },
-            // Err(why) => {
-            //     printerr!(why);
-            //     continue;
-            // }
-        // }
 
         // check if blank/comment
         cmdline.cmd = cmdline.cmd.trim().to_string();
