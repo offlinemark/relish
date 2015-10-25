@@ -228,7 +228,6 @@ fn main() {
     }
 
     // main shell loop
-    // loop {
     for line in reader.lines() {
         let l = match line {
             Ok(l) => l,
