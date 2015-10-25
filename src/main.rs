@@ -109,10 +109,9 @@ fn builtin(cmdline: &CommandLine) {
     }
 }
 
-fn print_prompt() {
+fn print_prompt() -> io::Result<()> {
     print!("{}", get_prompt());
-    if let Err(_) = io::stdout().flush() {
-    }
+    io::stdout().flush()
 }
 
 /*
@@ -209,7 +208,9 @@ fn main() {
         Box::new(BufReader::new(i))
     };
 
-    print_prompt();
+    if let Err(why) = print_prompt() {
+        printerr!(why);
+    }
 
     // main shell loop
     for line in reader.lines() {
@@ -226,7 +227,10 @@ fn main() {
             bg: false
         };
 
-        print_prompt();
+        if let Err(why) = print_prompt() {
+            printerr!(why);
+            continue;
+        }
 
         // check if blank/comment
         cmdline.cmd = cmdline.cmd.trim().to_string();
