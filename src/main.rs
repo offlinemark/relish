@@ -227,10 +227,6 @@ fn main() {
             bg: false
         };
 
-        if let Err(why) = print_prompt() {
-            printerr!(why);
-            continue;
-        }
 
         // check if blank/comment
         cmdline.cmd = cmdline.cmd.trim().to_string();
@@ -251,6 +247,11 @@ fn main() {
             builtin(&cmdline)
         } else {
             execute(&cmdline);
+        }
+
+        if let Err(why) = print_prompt() {
+            printerr!(why);
+            continue;
         }
     }
 }
