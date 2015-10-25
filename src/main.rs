@@ -1,6 +1,5 @@
 use std::io;
-use std::io::Read;
-use std::io::{BufReader,BufRead};
+use std::io::{stdin, Read, BufReader,BufRead};
 use std::env;
 use std::fs::File;
 use std::path::{Path, PathBuf};
@@ -203,29 +202,25 @@ fn read_line(cmd: &mut String, script_arg: Option<&mut File>) -> Result<usize, i
 
 
 fn main() {
-
-    let mut script_arg: Option<&mut File> = None;
-    let mut reader: Box<BufRead> = if env::args().count() == 2 {
-        let f = File::open(&env::args().nth(1).unwrap()).unwrap();
-        Box::new(BufReader::new(f))
-    } else {
-        let i = ::std::io::stdin();
-        Box::new(BufReader::new(i))
-    };
-
     if env::args().count() > 2 {
         printerr!(format!("Usage: {} [script]", env::args().nth(0).unwrap()));
         exit(1);
-    } else if env::args().count() == 2 {
-        // open file
-        // set flag that input is coming from file
-        let _path = &env::args().nth(1).unwrap();
-        let path = Path::new(_path);
-        let mut script_arg = match File::open(&path) {
-            Ok(file) => file,
-            Err(why) => panic!("couldn't open {}", path.display())
-        };
     }
+
+    let mut reader: Box<BufRead> = if env::args().count() == 2 {
+        let path = &env::args().nth(1).unwrap();
+        let file = match File::open(path) {
+            Ok(file) => file,
+            Err(why) => {
+                printerr!(format!("couldn't open {}", path));
+                exit(1);
+            }
+        };
+        Box::new(BufReader::new(file))
+    } else {
+        let i = io::stdin();
+        Box::new(BufReader::new(i))
+    };
 
     // main shell loop
     for line in reader.lines() {
